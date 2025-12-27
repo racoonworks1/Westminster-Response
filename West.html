@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Westminster Response | Global Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root {
+    --primary: #3b82f6;
+    --primary-dim: rgba(59, 130, 246, 0.1);
+    --glow: #60a5fa;
+    --bg-dark: #030407;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --text-main: #e2e8f0;
+    --text-muted: #64748b;
+    --font-head: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* --- BASE STYLES --- */
+html { scroll-behavior: smooth; }
+* { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+
+body { 
+    background-color: var(--bg-dark); 
+    color: var(--text-main); 
+    font-family: var(--font-head); 
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* --- CUSTOM DARKENED BACKGROUND --- */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Use your local Background file */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('Background.png'); 
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    z-index: -3; /* Placed behind everything */
+}
+
+/* --- WELCOME BOOT SCREEN --- */
+#welcome-screen {
+    position: fixed; inset: 0; 
+    background: #000; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), filter 1.2s ease;
+}
+
+.boot-content { text-align: center; position: relative; }
+
+.boot-logo {
+    height: 120px; margin-bottom: 30px;
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.4));
+    animation: logoEntrance 1.5s ease-out;
+}
+
+.boot-title {
+    font-family: var(--font-head);
+    font-weight: 700; font-size: 3.5rem; letter-spacing: -1px;
+    background: linear-gradient(to bottom, #fff, #475569);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 40px; position: relative;
+}
+
+.boot-loader-container { width: 300px; margin: 0 auto; }
+
+.boot-status {
+    font-family: var(--font-mono); font-size: 0.7rem; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 3px; margin-bottom: 10px; height: 15px;
+}
+
+.boot-bar { width: 100%; height: 2px; background: rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+
+.boot-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    background: var(--primary); width: 0%;
+    box-shadow: 0 0 15px var(--primary);
+    transition: width 0.4s ease;
+}
+
+/* --- AMBIENT ELEMENTS --- */
+.ambient-bg {
+    position: fixed; inset: 0; z-index: -2;
+    background: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(37, 99, 235, 0.05), transparent 25%);
+    animation: pulseBg 10s ease-in-out infinite alternate;
+}
+
+.noise {
+    position: fixed; inset: 0; z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none; opacity: 0.4;
+}
+
+/* --- NAVIGATION --- */
+nav {
+    position: fixed; top: 0; width: 100%; 
+    padding: 30px 5%;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 1000; 
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(to bottom, rgba(3, 4, 7, 0.8) 0%, rgba(3, 4, 7, 0) 100%);
+}
+
+nav.scrolled {
+    padding: 15px 5%;
+    background: rgba(3, 4, 7, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.brand {
+    font-family: var(--font-mono);
+    font-weight: 800; font-size: 0.9rem; letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 12px;
+    color: #fff; text-decoration: none;
+}
+
+.brand img { height: 35px; transition: 0.4s; }
+
+.status-pill {
+    font-family: var(--font-mono); font-size: 0.7rem;
+    padding: 6px 12px; border: 1px solid var(--primary);
+    border-radius: 50px; color: var(--primary);
+    background: var(--primary-dim);
+    box-shadow: 0 0 10px var(--primary-dim);
+}
+
+/* --- HERO --- */
+header {
+    min-height: 100vh; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+    padding: 0 20px;
+}
+
+.hero-sub {
+    font-family: var(--font-mono); color: var(--primary);
+    font-size: 0.85rem; letter-spacing: 4px; text-transform: uppercase;
+    margin-bottom: 20px; opacity: 0; animation: fadeUp 1s forwards 0.5s;
+}
+
+h1.hero-title {
+    font-size: clamp(3rem, 8vw, 6.5rem); line-height: 0.9;
+    font-weight: 700; letter-spacing: -2px;
+    margin-bottom: 30px;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.hero-desc {
+    max-width: 550px; color: var(--text-muted); font-size: 1.1rem;
+    line-height: 1.6; margin-bottom: 50px;
+    opacity: 0; animation: fadeUp 1s forwards 1s;
+}
+
+/* --- TIMER SYSTEM --- */
+.timer-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+    opacity: 0; animation: fadeUp 1s forwards 1.2s;
+}
+
+.timer-box {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    padding: 15px 25px; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 90px;
+    backdrop-filter: blur(5px);
+}
+
+.t-val { font-family: var(--font-mono); font-size: 2rem; font-weight: 800; color: #fff; }
+.t-lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-top: 5px; }
+
+/* --- CARD SYSTEM --- */
+section { padding: 140px 8%; position: relative; }
+
+.sec-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 60px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;
+}
+
+.sec-title { font-size: 2.5rem; letter-spacing: -1px; }
+
+.cards-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+.spot-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; padding: 40px;
+    position: relative; overflow: hidden;
+    transition: 0.3s ease;
+    display: flex; flex-direction: column; justify-content: space-between;
+    height: 100%; cursor: pointer;
+}
+
+.spot-card::before {
+    content: ""; position: absolute;
+    left: var(--mouse-x); top: var(--mouse-y);
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15), transparent 60%);
+    transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.5s;
+    pointer-events: none; z-index: 0;
+}
+
+.spot-card:hover::before { opacity: 1; }
+.spot-card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(59, 130, 246, 0.08); }
+
+.card-content { position: relative; z-index: 1; }
+.card-icon { font-size: 2rem; margin-bottom: 25px; color: var(--text-muted); transition: 0.3s; }
+.spot-card:hover .card-icon { color: var(--primary); transform: scale(1.1); }
+.card-h { font-size: 1.4rem; margin-bottom: 10px; font-weight: 500; }
+.card-p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+
+/* --- DETAIL OVERLAY --- */
+#detail-overlay {
+    position: fixed; inset: 0; background: var(--bg-dark); z-index: 8000;
+    display: none; flex-direction: column; padding: 120px 10%;
+    transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+}
+
+#detail-overlay.active { display: flex; transform: translateY(0); }
+
+.back-btn {
+    position: fixed; top: 40px; left: 5%; color: var(--primary);
+    font-family: var(--font-mono); cursor: pointer; z-index: 8001;
+    display: flex; align-items: center; gap: 10px; font-size: 0.8rem;
+}
+
+.detail-header { border-bottom: 1px solid var(--glass-border); padding-bottom: 40px; margin-bottom: 40px; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+.detail-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 30px; border-radius: 12px; }
+.detail-box h4 { font-family: var(--font-mono); color: var(--primary); margin-bottom: 15px; font-size: 0.8rem; }
+
+/* --- EXTERNAL MODAL --- */
+.overlay-panel {
+    position: fixed; inset: 0; background: rgba(5, 7, 10, 0.95);
+    z-index: 9000; backdrop-filter: blur(20px);
+    display: none; align-items: center; justify-content: center;
+}
+
+.overlay-panel.active { display: flex; animation: fadeIn 0.3s; }
+
+.modal-content {
+    background: #0a0c12; border: 1px solid var(--primary);
+    padding: 50px; border-radius: 4px; max-width: 500px; width: 90%;
+    text-align: center; position: relative;
+    box-shadow: 0 0 50px rgba(59, 130, 246, 0.2);
+}
+
+.btn-blue {
+    background: var(--primary); color: #000; border: none;
+    padding: 12px 30px; font-family: var(--font-mono); font-weight: 800;
+    text-transform: uppercase; cursor: pointer; transition: 0.2s;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes logoEntrance { from { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(10px); } to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(20px); } }
+@keyframes pulseBg { 0% { opacity: 0.5; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+footer {
+    width: 100%; border-top: 1px solid var(--glass-border); padding: 40px 8%;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.8rem; color: var(--text-muted);
+    background: rgba(3, 4, 7, 0.5);
+    backdrop-filter: blur(5px);
+}
+</style>
+</head>
+<body>
+
+<div class="ambient-bg"></div>
+<div class="noise"></div>
+
+<div id="welcome-screen">
+        <h1 class="boot-title">WESTMINSTER RESPONSE</h1>
+        <div id="boot-status" style="font-family: var(--font-mono); color: var(--primary); font-size: 0.7rem; margin-bottom: 10px;">CONNECTING...</div>
+        <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+</div>
+
+<div class="overlay-panel" id="redirect-modal">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 10px;">Are you sure?</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom:30px;">Redirecting to secure network:<br><span id="modal-target" style="color:#fff; border-bottom:1px solid var(--primary);">TARGET</span></p>
+        <div style="display:flex; gap:15px; justify-content:center;">
+            <button class="btn-blue" id="confirm-redirect">AUTHORIZE</button>
+            <button onclick="closeModal()" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-muted); padding:10px 20px; cursor:pointer;">ABORT</button>
+        </div>
+    </div>
+</div>
+
+<div id="detail-overlay">
+    <div class="back-btn" onclick="closeDetails()"><i class="fas fa-arrow-left"></i> RETURN TO MAIN HUB</div>
+    <div class="detail-header">
+        <h1 id="det-title" style="font-size: 4rem;">Agency Title</h1>
+        <p id="det-subtitle" style="color: var(--primary); font-family: var(--font-mono);">SECTOR_INFO</p>
+    </div>
+    <div class="detail-grid">
+        <div class="detail-box">
+            <h4>MISSION STATEMENT</h4>
+            <p id="det-desc" style="line-height: 1.6; color: var(--text-muted);"></p>
+        </div>
+        <div class="detail-box">
+            <h4>OPERATIONAL UNITS</h4>
+            <ul id="det-units" style="list-style: none; color: var(--text-muted); line-height: 2;"></ul>
+        </div>
+    </div>
+</div>
+
+<nav id="navbar">
+    <a href="#" class="brand"><img src="logo.png" alt="Logo"> WESTMINSTER RESPONSE</a>
+    <div class="status-pill">Game In Development</div>
+</nav>
+
+<header>
+    <div class="hero-sub">WESTMINSTER SIMULATION (GAME IN DEVELOPMENT)</div>
+    <h1 class="hero-title" data-value="WESTMINSTER RESPONSE">WESTMINSTER RESPONSE</h1>
+    <p class="hero-desc">A ROBLOX roleplay game set in Westminster, inspired by the Metropolitan Police (MET) and London Ambulance Service (LAS).</p>
+    
+    <div class="timer-grid">
+        <div class="timer-box"><span class="t-val" id="days">00</span><span class="t-lbl">DAYS</span></div>
+        <div class="timer-box"><span class="t-val" id="hours">00</span><span class="t-lbl">HOURS</span></div>
+        <div class="timer-box"><span class="t-val" id="min">00</span><span class="t-lbl">MINS</span></div>
+        <div class="timer-box"><span class="t-val" id="sec">00</span><span class="t-lbl">SECS</span></div>
+    </div>
+</header>
+
+<section id="sectors">
+    <div class="sec-head">
+        <div>
+            <h2 class="sec-title">Operational Sectors</h2>
+            <p style="color:var(--text-muted); max-width: 400px; margin-top: 10px;">Select a division to view deployment details and available specializations.</p>
+        </div>
+        <div style="font-family: var(--font-mono); color: var(--primary); opacity: 0.5;">01 // DIVISIONS</div>
+    </div>
+
+    <div class="cards-wrapper">
+        <div class="spot-card" onclick="openDetails('police')">
+            <div class="card-content">
+                <i class="fas fa-shield-alt card-icon"></i>
+                <h3 class="card-h">Metropolitan Police Service</h3>
+                <p class="card-p">From frontline patrol to elite tactical firearms units and high-speed interception.</p>
+                <div style="margin-top:20px; color:var(--primary); font-size:0.8rem;">ACCESS SECTOR →</div>
+            </div>
+        </div>
+        <div class="spot-card" onclick="openDetails('ambulance')">
+            <div class="card-content">
+                <i class="fas fa-ambulance card-icon"></i>
+                <h3 class="card-h">London Ambulance Service</h3>
+                <p class="card-p">Providing critical emergency care via rapid response vehicles and air support.</p>
+                <div style="margin-top:20px; color:var(--primary); font-size:0.8rem;">ACCESS SECTOR →</div>
+        </div>
+    </div>
+</section>
+
+<section id="uplink">
+    <div class="sec-head">
+        <div>
+            <h2 class="sec-title">Social Links</h2>
+            <p style="color:var(--text-muted); max-width: 400px; margin-top: 10px;">Connect with our communities and official groups.</p>
+        </div>
+        <div style="font-family: var(--font-mono); color: var(--primary); opacity: 0.5;">02 // EXTERNAL</div>
+    </div>
+
+    <div class="cards-wrapper">
+        <div class="spot-card" onclick="triggerLink('https://www.roblox.com/communities/16375524', 'Met Police Group')">
+            <div class="card-content">
+                <i class="fab fa-unity card-icon"></i>
+                <h3 class="card-h">Police Group</h3>
+                <p class="card-p">Official Roblox group for the Westminster Response / Metropolitan Police Service.</p>
+            </div>
+        </div>
+        <div class="spot-card" onclick="triggerLink('https://www.roblox.com/communities/35203590', 'Ambulance Group')">
+            <div class="card-content">
+                <i class="fas fa-heartbeat card-icon"></i>
+                <h3 class="card-h">Ambulance Group</h3>
+                <p class="card-p">Official Roblox group for the Westminster Response / London Ambulance Service.</p>
+            </div>
+        </div>
+        <div class="spot-card" onclick="triggerLink('https://discord.gg/GmRT7dWW', 'Discord Server')">
+            <div class="card-content">
+                <i class="fab fa-discord card-icon" style="color: #5865F2;"></i>
+                <h3 class="card-h">Discord Server</h3>
+                <p class="card-p">The central hub for Westminster Response community communications and updates.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div><i class="fas fa-code"></i> DESIGNED BY WIZARD STUDIOS</div>
+    <div style="font-family: var(--font-mono);">v0.0.0</div>
+</footer>
+
+<script>
+    const agencyData = {
+        police: {
+            title: "Metropolitan Police", sub: "LAW ENFORCEMENT",
+            desc: "The Met Police are dedicated to maintaining peace across the capital. Officers can specialize in SCO19 tactical firearms, Roads Policing, or community frontline duties.",
+            units: ["• Frontline Patrol", "• SCO19 Specialist Firearms", "• Roads & Transport Policing", "• Dog Support Unit"]
+        },
+        ambulance: {
+            title: "London Ambulance", sub: "MEDICAL RESPONSE",
+            desc: "The London Ambulance Service provides high-level emergency medical response. Join as a paramedic and advance into Flight Medics or the HART tactical team.",
+            units: ["• Advanced Life Support", "• Flight Medics (HEMS)", "• HART Tactical Medics", "• Fast Response Cars"]
+        },
+        control: {
+            title: "Central Control", sub: "DISPATCH & COMMS",
+            desc: "Dispatchers act as the brain of Westminster Response. Manage the city's resources, coordinate radio traffic, and ensure responders reach the scene safely.",
+            units: ["• Emergency Dispatchers", "• Tactical Command", "• Radio Operations", "• Incident Call Handlers"]
+        }
+    };
+
+    // --- BOOT SEQUENCE ---
+    let progress = 0;
+    const bootMsgs = ["Initialising...", "Loading Westminster...", "Syncing Social Links...", "Ready."];
+    
+    function startBoot() {
+        let interval = setInterval(() => {
+            progress += Math.random() * 12;
+            if (progress > 100) progress = 100;
+            document.getElementById('boot-fill').style.width = progress + "%";
+            document.getElementById('boot-status').innerText = bootMsgs[Math.floor(progress/30)] || "Ready.";
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    document.getElementById('welcome-screen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('welcome-screen').remove();
+                    }, 1200);
+                }, 800);
+            }
+        }, 150);
+    }
+
+    // --- MOUSE TRACKING ---
+    document.querySelectorAll('.spot-card').forEach(card => {
+        card.onmousemove = e => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+            card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+        };
+    });
+
+    // --- DETAIL TRANSITIONS ---
+    function openDetails(agency) {
+        const data = agencyData[agency];
+        document.getElementById('det-title').innerText = data.title;
+        document.getElementById('det-subtitle').innerText = data.sub;
+        document.getElementById('det-desc').innerText = data.desc;
+        document.getElementById('det-units').innerHTML = data.units.map(u => `<li>${u}</li>`).join('');
+        const overlay = document.getElementById('detail-overlay');
+        overlay.style.display = 'flex';
+        setTimeout(() => overlay.classList.add('active'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+    function closeDetails() {
+        const overlay = document.getElementById('detail-overlay');
+        overlay.classList.remove('active');
+        setTimeout(() => { overlay.style.display = 'none'; document.body.style.overflow = 'auto'; }, 600);
+    }
+
+    // --- REDIRECT MODAL ---
+    let targetUrl = "";
+    function triggerLink(url, name) {
+        targetUrl = url;
+        document.getElementById('modal-target').innerText = name;
+        document.getElementById('redirect-modal').classList.add('active');
+    }
+    function closeModal() { document.getElementById('redirect-modal').classList.remove('active'); }
+    document.getElementById('confirm-redirect').onclick = () => { window.open(targetUrl, '_blank'); closeModal(); };
+
+    // --- TIMER ---
+    const dest = new Date("September 19, 2026 17:00:00").getTime();
+    setInterval(() => {
+        const diff = dest - new Date().getTime();
+        document.getElementById('days').innerText = Math.floor(diff / 86400000).toString().padStart(2,'0');
+        document.getElementById('hours').innerText = Math.floor((diff % 86400000) / 3600000).toString().padStart(2,'0');
+        document.getElementById('min').innerText = Math.floor((diff % 3600000) / 60000).toString().padStart(2,'0');
+        document.getElementById('sec').innerText = Math.floor((diff % 60000) / 1000).toString().padStart(2,'0');
+    }, 1000);
+
+    window.onscroll = () => {
+        const nav = document.getElementById('navbar');
+        if (window.scrollY > 50) nav.classList.add('scrolled');
+        else nav.classList.remove('scrolled');
+    };
+
+    window.onload = startBoot;
+</script>
+
+</body>
+</html>
